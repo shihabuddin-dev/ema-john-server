@@ -10,7 +10,7 @@ app.use(express.json());
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(process.env.MONGODB_URI, {
@@ -24,7 +24,7 @@ const client = new MongoClient(process.env.MONGODB_URI, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const productCollection = client.db('emaJohnDB').collection('products');
 
@@ -38,6 +38,18 @@ async function run() {
       res.send(result);
     })
 
+    app.post('/productsByIds', async (req, res) => {
+      const ids = req.body;
+      const idsWithObjectId = ids.map(id => new ObjectId(id))
+      const query = {
+        _id: {
+          $in: idsWithObjectId
+        }
+      }
+      const result = await productCollection.find(query).toArray()
+      res.send(result)
+    })
+
     // pagination for products 
     app.get('/productsCount', async (req, res) => {
       const count = await productCollection.estimatedDocumentCount()
@@ -46,8 +58,8 @@ async function run() {
     })
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
